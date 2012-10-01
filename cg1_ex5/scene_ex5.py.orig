@@ -1,0 +1,296 @@
+# -*- coding: utf-8 -*-
+"""
+This is the scene definition for exercise 5.
+
+The comments in this file are written in the reStructured text format and adhere
+to the commenting style used by epydoc.
+"""
+
+if __name__ == '__main__':
+    # Import Psyco if available
+    try:
+        import psyco
+        print(u"Using psyco with full optimization...")
+        psyco.full()
+    except ImportError:
+        pass
+
+import sys
+
+import Image
+from numpy import array, dot, inner, sum
+from numpy.linalg import inv
+from numpy.random import rand
+from OpenGL.arrays import numpymodule
+numpymodule.NumpyHandler.ERROR_ON_COPY = True
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
+
+from scenegraph import Scene, CuboidNode, TriangleMeshNode, PointerNode, PointCloudNode, ColoredPointCloudNode
+from reader import openOff
+from console import ProgressBar
+
+class RaytraceScene(Scene):
+    def __init__(self, application):
+        Scene.__init__(self, application, name="cg1_ex5", draw_origin=False)
+        #self.eye = array([0.0, 0.0, 0.0, 1.0])
+        self.max_recursion = 2
+    
+    def _init_projection(self):
+        window_width = glutGet(GLUT_WINDOW_WIDTH)
+        window_height = glutGet(GLUT_WINDOW_HEIGHT)
+        
+        # light and material
+        self.mat_ambient        = [0.5, 0.5, 0.5, 1.0]
+        self.mat_diffuse        = [1.0, 1.0, 1.0, 1.0]
+        self.mat_specular       = [0.1, 0.1, 0.1, 1.0]
+        self.mat_shininess      = [3.0]
+        self.model_ambient      = [0.5, 0.5, 0.5]
+        self.light_position_0   = [50.0, 50.0, 0.0, 1.0]
+        self.light_position_1   = [-50.0, -50.0, 0.0, 1.0]
+        self.light_ambient_0    = [0.5, 0.0, 0.0, 1.0]
+        self.light_ambient_1    = [0.0, 0.5, 0.0, 1.0]
+        self.light_diffuse_0    = [0.5, 0.0, 0.0, 1.0]
+        self.light_diffuse_1    = [0.0, 0.5, 0.0, 1.0]
+        self.light_specular_0    = [0.5, 0.0, 0.0, 1.0]
+        self.light_specular_1    = [0.0, 0.5, 0.0, 1.0]
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, self.mat_ambient)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, self.mat_diffuse)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, self.mat_specular)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, self.mat_shininess)
+        glEnable(GL_COLOR_MATERIAL)
+        
+        glLightfv(GL_LIGHT0, GL_POSITION, self.light_position_0)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, self.light_ambient_0)
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, self.light_diffuse_0)
+        glLightfv(GL_LIGHT0, GL_SPECULAR, self.light_specular_0)
+        
+        glLightfv(GL_LIGHT1, GL_POSITION, self.light_position_1)
+        glLightfv(GL_LIGHT1, GL_AMBIENT, self.light_ambient_1)
+        glLightfv(GL_LIGHT1, GL_DIFFUSE, self.light_diffuse_1)
+        glLightfv(GL_LIGHT1, GL_SPECULAR, self.light_specular_1)
+        
+        #glLightModelfv(GL_LIGHT_MODEL_AMBIENT, self.model_ambient)
+        glEnable(GL_LIGHTING)
+        #glDisable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glEnable(GL_LIGHT1)
+        
+        # clear background to black and clear depth buffer
+        glClearColor(0.2, 0.2, 0.2, 1.0)
+ 
+        # disable depth test (z-buffer)
+        glEnable(GL_DEPTH_TEST)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        # shading
+        glShadeModel(GL_SMOOTH)
+        glPolygonMode(GL_FRONT, GL_FILL)
+        glPolygonMode(GL_BACK, GL_FILL)
+        #glPolygonMode(GL_BACK, GL_LINE)
+        
+        glViewport(0, 0, window_width, window_height)
+
+        # enable normalization of vertex normals
+        glEnable(GL_NORMALIZE)
+        
+        # enable line antialiasing
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
+        glEnable(GL_LINE_SMOOTH)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glLineWidth(1.5)
+        
+<<<<<<< .mine
+        self.stepping = 2
+=======
+        self.stepping = 5
+>>>>>>> .r93
+        glPointSize(float(self.stepping)*2.0)
+        #glPointSize(1.0)
+
+        # initial view definitions
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        
+        # perspective projection
+        gluPerspective(40.0, float(window_width) / float(window_height), 0.1, 200.0)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        
+    def init(self):
+        Scene.init(self)
+        
+        self.triangles = triangles = openOff("./meshes/icosa.off").get_triangles()
+        self.mesh = TriangleMeshNode(triangles   = triangles,
+                                scene       = self, 
+                                #scaling=[0.5, 0.5, 0.5],
+                                scaling     = [1.0, 1.0, 1.0], 
+                                position    = [0.0, 0.0, 0.0],
+                                draw_origin = False)
+        self.pointer = PointerNode(scene       = self, 
+                                   draw_origin = False)
+        self.points = ColoredPointCloudNode(scene          = self, 
+                                            color          = (1.0, 1.0, 1.0, 1.0), 
+                                            position       = [0.0, 0.0, 10.0],
+                                            draw_origin    = False)
+        self.helpers = ColoredPointCloudNode(scene          = self, 
+                                            color          = (1.0, 1.0, 1.0, 1.0), 
+                                            position       = [0.0, 0.0, 0.0],
+                                            draw_origin    = False)
+        self.children.append(self.mesh)
+        self.children.append(self.pointer)
+        self.children.append(self.points)
+        self.children.append(self.helpers)
+    
+    def raytrace(self, area=None):
+        self._log.info(u"Starting raytracing...")
+        modelview = array(glGetDoublev(GL_MODELVIEW_MATRIX)).transpose()
+        inv_modelview = inv(modelview)
+        eye = dot(inv_modelview, array([0.0, 0.0, 0.0, 1.0]))
+        
+#        new_mesh = TriangleMeshNode(triangles   = self.triangles.transformed(self.mesh.get_transformation()),
+#                                scene       = self, 
+#                                #scaling=[0.5, 0.5, 0.5],
+#                                scaling     = [20.0, 20.0, 20.0], 
+#                                position    = [0.0, -2.0, 0.0],
+#                                draw_origin = False)
+        
+        transformation = self.mesh.get_transformation()
+        transformed_triangles = self.triangles.transformed(transformation)
+        normal_map = transformed_triangles.get_vertex_normal_map()
+#        bbox = transformed_triangles.get_bounding_box()
+#        #self._log.debug(u"bbox: \n%s" % str(bbox))
+#        screen_min = array(gluProject(bbox[0][0], bbox[0][1], bbox[0][2], model=transformation))
+#        screen_max = array(gluProject(bbox[1][0], bbox[1][1], bbox[1][2], model=transformation))
+#        self._log.debug(u"Screen min: %s" % screen_min)
+#        self._log.debug(u"Screen max: %s" % screen_max)
+#        glutWarpPointer(int(screen_min[0]), int(screen_min[1]))
+        
+        stepping = self.stepping
+        if area:
+            point_tl, point_br = area
+            window_width = point_br[0] - point_tl[0]
+            window_height = point_br[1] - point_tl[1]
+            steps_x = range(point_tl[0], point_tl[0]+window_width, stepping)
+            steps_y = range(glutGet(GLUT_WINDOW_HEIGHT) - point_br[1], glutGet(GLUT_WINDOW_HEIGHT) - point_br[1]+window_height, stepping)
+        else:
+            window_width = glutGet(GLUT_WINDOW_WIDTH)
+            window_height = glutGet(GLUT_WINDOW_HEIGHT)
+            steps_x = range(0, window_width, stepping)
+            steps_y = range(0, window_height, stepping)
+        self._log.debug(u"Rendering window: %s" % str((window_width, window_height)))
+        
+        surface_points = []
+        #helper_points = []
+        progress = ProgressBar(0, len(steps_x) * len(steps_y), mode='fixed')
+        progress.output()
+        for window_x in steps_x:
+            for window_y in steps_y:
+                plane_point = array(gluUnProject(float(window_x), float(window_y), 0.0))
+                #helper_points.append((plane_point, array([0.0, 0.0, -1.0]), array([0.0, 1.0, 0.0, 1.0])))
+                #direction = world_point - eye
+                #
+                # The point rendering will happen here:
+                # 1. determine the intersection point
+                # 2. determine the color of the intersection point
+                # 3. add the point to a scenegraph node, that will render it in the correct color
+                #    (which PointCloudNode does not yet do)
+                #
+                intersection = transformed_triangles.get_closest_intersection(eye[0:3], plane_point, normal_map)
+                if intersection:
+                    intersection_triangle, intersection_point, intersection_normal = intersection
+                    color = self.get_color(intersection_point, eye[0:3], intersection_normal, 0, transformed_triangles, normal_map)
+                    surface_points.append((intersection_point, intersection_normal, color))
+                    #self._log.debug(u"Surface at %s" % str(intersection_point))
+                progress.increment_amount()
+                progress.output()
+        
+        print
+        glDisable(GL_LIGHTING)
+        #self.mesh.color = array([1.0, 1.0, 1.0, 0.0])
+        #self.mesh.update_display_list()
+        self.mesh.visible = False
+        self.points.points = surface_points
+        self.points.update_display_list()
+        #self.helpers.points = helper_points
+        #self.helpers.update_display_list()
+    
+#    def render(self):
+#        #glutSetWindow(self.window)
+#        #glClearColor(*(tuple(rand(1, 3)[0]) + (1.0, )))
+#        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+#        glMatrixMode(GL_MODELVIEW)
+#        glLoadIdentity()
+#        gluLookAt(0.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+#        
+#        Scene.render(self)
+#        #self._log.debug(u"rendering obj in window %d" % glutGetWindow())
+#        glutSwapBuffers()
+
+    def get_color(self, intersection_point, ray_origin, normal, current_recursion, transformed_triangles, normal_map):
+        lights = [GL_LIGHT0, GL_LIGHT1]
+        colors = []
+        result_color = array([0,0,0,0])
+        
+        for light in lights:
+            if self.is_in_shadow(intersection_point, light, transformed_triangles, normal_map)==False:
+                light_ambient       = array(glGetLightfv(light, GL_AMBIENT))
+                light_diffuse       = array(glGetLightfv(light, GL_DIFFUSE))
+                light_specular      = array(glGetLightfv(light, GL_SPECULAR))
+                material_ambient    = array(glGetMaterialfv(GL_FRONT, GL_AMBIENT))
+                material_diffuse    = array(glGetMaterialfv(GL_FRONT, GL_DIFFUSE))
+                material_specular   = array(glGetMaterialfv(GL_FRONT, GL_SPECULAR))
+            else:
+                #print "SHADOW!"
+                light_ambient       = [0,0,0,1]
+                light_diffuse       = [0,0,0,1]
+                light_specular      = [0,0,0,1]
+                material_ambient    = [0,0,0,1]
+                material_diffuse    = [0,0,0,1]
+                material_specular   = [0,0,0,1]
+                
+            incoming_direction = intersection_point - ray_origin
+            outgoing_direction = 2*(normal * inner(normal,incoming_direction)) - incoming_direction
+            
+            reflective = [0,0,0,0]
+            while current_recursion + 1 < self.max_recursion:
+                current_recursion += 1
+                new_intersection = transformed_triangles.get_closest_intersection(intersection_point, intersection_point + outgoing_direction, normal_map)
+                if new_intersection != None:
+                    reflective += self.get_color(new_intersection[1], intersection_point, new_intersection[2], current_recursion, transformed_triangles, normal_map)
+            
+            ambient = [light_ambient[i] * material_ambient[i] for i in range(0, len(light_ambient))]
+            diffuse = [light_diffuse[i] * material_diffuse[i] for i in range(0, len(light_diffuse))]
+            specular_lm = [light_specular[i] * material_specular[i] for i in range(0, len(light_specular))]
+            specular = [specular_lm[i] * reflective[i] for i in range(0, len(specular_lm))]
+
+            ambient = array(ambient)
+            diffuse = array(diffuse)
+            specular = array(specular)
+            color = ambient + diffuse + specular
+            colors.append(color)
+            #print colors
+            
+        for color in colors:
+            result_color = result_color + color
+        #print result_color
+        return result_color
+        
+    def is_in_shadow(self, intersection_point, light, transformed_triangles, normal_map):
+        light_position = array(glGetLightfv(light, GL_POSITION))
+        eps = 0.1
+        for i in range(0,3):
+            intersection_point[i] = intersection_point[i] + eps
+
+        if transformed_triangles.get_closest_intersection(intersection_point[0:3], light_position[0:3], normal_map) != None:
+            return True
+
+        return False
+            
+            
+            
+        
+        
+        

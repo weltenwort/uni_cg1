@@ -1,0 +1,58 @@
+\documentclass[a4paper,10pt]{scrartcl}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{enumerate}
+\usepackage[top=2cm, left=2cm, bottom=2cm, right=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+%\usepackage{gensymb}
+\usepackage{amssymb}
+\usepackage{float}
+
+\floatstyle{ruled}
+\newfloat{program}{thp}{lop}
+\floatname{program}{Program}
+
+\pagestyle{myheadings}
+\markright{Gruppe 1} 
+
+\begin{document}
+ \begin{center}
+{\huge \bfseries Computer Graphics 1\\[0.5cm]Übungsblatt 5}\\[1.0cm]
+  
+  Stürmer, Felix - 230127 - Informatik(Diplom) - stuermer@cs.tu-berlin.de\\
+  Fischer, Oleg - 300696 - Informatik(Diplom) - olegf@cs.tu-berlin.de\\
+  Oskamp, Robert - 306952 - Mathematik(Diplom) - robert.oskamp@gmx.de\\[2.0cm]
+ \end{center}
+\section{Theoriefragen}
+
+ \begin{enumerate}[1.]
+  \item 8x8 Blöcke beim JPEG Verfahren sind die optimale Lösung für Rechenzeit und Qualität des Ergebnisses. Bei kleineren Blöcken gewinnt man an Geschwindigkeit bei der Berechnung, verliert allerdings an Qualität, während größere Blöcke eine bessere Bildqualität liefern, jedoch die Rechenzeit erhöhen.
+
+  \item Beim JPEG Kompressionsverfahren gibt es zwei Schritte, die verlustbehaftet sind:
+   \begin{enumerate}[a)]
+    \item Subsampling/Downsampling: Hier sollte als Parameter 4:4:4 gewählt werden, damit kein Subsampling stattfindet.
+    \item Quantisierung: Hier werden die zuvor berechneten Blöcke, die spektrale Informationen enthalten, elementweise durch eine 8x8 Quantisierungsmatrix dividiert. Diese Matrix ist für den Kompressionsgrad und damit auch für die Qualität verantwortlich, wobei größere Matrixeinträge einen höheren Kompressionsgrad bedeuten. Um eine verlustfreie Kompression zu erhalten, sollte als Quantisierungsmatrix $Q$ mit $Q_{ij} = 1$ für $i,j = 1 \dots 8$ verwendet werden.
+   \end{enumerate}
+
+  \item Für jeden Lichtstrahl wird ein Parameter mit der Lichtintensität des Strahls bestimmt.Wenn der Strahl ein halbtransparentes Objekt durchläuft, so wird die Intensität abgeschwächt.Mit Hilfe dieses Parameters werden der Helligkeitswert und die Farbe (falls das Objekt gefärbt ist) der resultierenden Pixel bestimmt. Falls der Strahl mehrere Objekte durchläuft, so wird dieser jedes mal abgeschwächt und die Farben der Objekte werden additiv gemischt.
+
+  \item Funktionsentwurf:
+   \begin{enumerate}[a)]
+    \item Gegeben sind zwei Facetten $F_1$ und $F_2$, die sich gegenseitig bestrahlen.
+    \item Berechne die Formfaktoren.
+    \item $F_1$ wird unterteilt.
+    \item Berechne die Formfaktoren der neuen Facetten und deren Strahlungswerte zu $F_2$.
+    \item Summiere diese auf und vergleiche mit dem Strahlungswert von $F_1$ zu $F_2$.
+    \item Falls sich die Strahlungswerte stark unterscheiden, unterteile und iteriere.
+   \end{enumerate}
+
+  \item Man kann Raytracing und Radiosity kombinieren, um die Formfaktoren der Facetten zu bestimmen. Dabei werden ein oder mehrere Strahlen von einer Facette zu der anderen gezogen.
+
+
+ \end{enumerate}
+
+\end{document}

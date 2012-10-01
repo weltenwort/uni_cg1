@@ -1,0 +1,47 @@
+\documentclass[a4paper,10pt]{scrartcl}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{enumerate}
+\usepackage[top=2cm, left=2cm, bottom=2cm, right=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+%\usepackage{gensymb}
+\usepackage{amssymb}
+\usepackage{float}
+
+\floatstyle{ruled}
+\newfloat{program}{thp}{lop}
+\floatname{program}{Program}
+
+\pagestyle{myheadings}
+\markright{Gruppe 1} 
+
+\begin{document}
+ \begin{center}
+{\huge \bfseries Computer Graphics 1\\[0.5cm]Übungsblatt 4}\\[1.0cm]
+  
+  Stürmer, Felix - 230127 - Informatik(Diplom) - stuermer@cs.tu-berlin.de\\
+  Fischer, Oleg - 300696 - Informatik(Diplom) - olegf@cs.tu-berlin.de\\
+  Oskamp, Robert - 306952 - Mathematik(Diplom) - robert.oskamp@gmx.de\\[2.0cm]
+ \end{center}
+\section{Theoriefragen}
+
+ \begin{enumerate}[1.]
+  \item Eine korrekte perspektivische Transformation der Textur ist durch lineare Interpolation nicht unbedingt gegeben, da einheitliche Abstände im Bildraum nicht unbedingt auch einheitlichen Abständen am ursprünglichen 3D Objekt entsprechen. Dadurch kann die Textur nach der perspektivischen Transformation im Vergleich zum Objekt fehlerhaft angezeigt werden, wenn lediglich lineare Interpolation zwischen den Eckpunkt-Texturkoordinaten durchgeführt wurde.
+
+  \item Der Einsatz einer MipMap zur Texturierung ist dann sinnvoll, wenn die Textur quadratisch ist und die Seitenlänge eine Zweierpotenz ist, denn dann kann das Prinzip der MipMap erst angewendet werden. Desweiteren ist es sinnvoll, wenn die Textur hauptsächlich auf den Stufen der Texturhierarchie betrachtet wird, da es ansonsten durch die Interpolation zwischen den Stufen  zu Schärfeverlust kommen kann.
+
+  \item Damit sich das Objekt bijektiv auf die umgebende Kugel abbilden lässt, darf jeder Strahl, der vom Mittelpunkt ausgeht, die Oberfläche des Objektes nur genau einmal schneiden. Damit ist die Familie der Objekte, die sich bijektiv auf eine Kugel abbilden lassen, die Familie der sternförmigen Objekte. Dabei ist ein sternförmiges Objekt ein Objekt, für das gilt: Es existiert ein Punkt innerhalb des Objektes, so dass der direkte Weg zu allen anderen Punkten im Objekt vollständig im Innern des Objektes verläuft.
+ 
+  \item Der optimale Filter für die Faltung im Ortsraum ist die sinc Funktion. Bei linearer Interpolation kann es zu Verlusten kommen, allerdings liegt das Eingangssignal digital vor und ist damit bandbeschränkt. Da die sinc Funktion bandbeschränkte Signale verlustfrei faltet, ist sie der optimale Filter für die diskrete Faltung im Ortsraum.
+
+  \item Bei der Parametrisierung in planaren Koordinaten kommt es zwangsweise zu Verzerrungen, da kein umgebendes Objekt korrekt wiedergegeben werden kann. Bei kantigen Objekten treten die Probleme besonders an den Kanten auf, während bei runden Objekten die Probleme besonders an den Polen zu finden sind.
+
+  \item Um die interaktive Darstellung der Silhouette eines Objektes mittels Environment Mapping zu erreichen, könnte man eine künstliche, nicht automatisch berechnete Map erzeugen, die vollständig schwarz ist und diese auf das Objekt legen. Damit wäre das Objekt vollständig schwarz und es wäre folglich nur als Silhouette zu erkennen.
+
+ \end{enumerate}
+
+\end{document}
